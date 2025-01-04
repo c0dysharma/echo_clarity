@@ -1,4 +1,4 @@
-package services
+package structs
 
 import (
 	"context"
@@ -9,6 +9,7 @@ import (
 	"google.golang.org/api/calendar/v3"
 	"google.golang.org/api/option"
 )
+
 type CalendarEvent struct {
 	EventName string `json:"event_name"`
 	StartTime string `json:"start_time"` // ISO 8601 format: "2025-01-03T10:00:00-05:00"
@@ -23,7 +24,7 @@ func (c *CalendarEvent) getCalendarService(accessToken string) (*calendar.Servic
 	srv, err := calendar.NewService(ctx, option.WithTokenSource(oauth2.StaticTokenSource(
 		&oauth2.Token{AccessToken: accessToken},
 	)))
-	
+
 	return srv, err
 }
 

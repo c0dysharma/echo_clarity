@@ -5,12 +5,12 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/c0dysharma/echo_clarity/services"
+	"github.com/c0dysharma/echo_clarity/structs"
 	"github.com/labstack/echo/v4"
 	"google.golang.org/api/calendar/v3"
 )
 
-var calendarService = services.CalendarEvent{}
+var calendarService = structs.CalendarEvent{}
 
 func GetCalendarEvents(c echo.Context) error {
 	accessToken := ""
@@ -30,7 +30,7 @@ func CreateCalendarEvent(c echo.Context) error {
 	accessToken := ""
 
 	// Parse the request body
-	var req services.CalendarEvent
+	var req structs.CalendarEvent
 	if err := c.Bind(&req); err != nil {
 		log.Printf("Failed to parse request body: %v", err)
 		return c.JSON(http.StatusBadRequest, map[string]string{"error": "Invalid request"})
