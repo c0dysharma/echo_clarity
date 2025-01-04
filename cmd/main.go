@@ -23,6 +23,7 @@ func initOAuth() {
 			os.Getenv("GOOGLE_CLIENT_KEY"),
 			os.Getenv("GOOGLE_CLIENT_SECRET"),
 			os.Getenv("GOOGLE_REDIRECT_URL"),
+			"email", "profile", "https://www.googleapis.com/auth/calendar",
 		),
 	)
 
@@ -38,8 +39,9 @@ func main() {
 		log.Fatal("Error loading .env file")
 	}
 
-	sessionStore := sessions.NewCookieStore([]byte(os.Getenv("GOOGLE_CLIENT_KEY")))
-	gothic.Store = sessionStore
+	store := sessions.NewCookieStore([]byte(os.Getenv("GOOGLE_CLIENT_KEY")))
+	store.MaxAge(86400 * 30) // 30 days
+	gothic.Store = store
 
 	initOAuth()
 
@@ -53,6 +55,8 @@ func main() {
 	e.GET("/ping", handlers.PongHandler)
 	e.GET("/auth/google", handlers.GoogleLoginHandler)
 	e.GET("/auth/google/callback", handlers.GoogleCallbackHandler)
+	e.GET("/calendar", handlers.GetCalendarEvents)
+	e.POST("/calendar", handlers.CreateCalendarEvent)
 
 	// Start server
 	port := os.Getenv("PORT")
