@@ -1,10 +1,13 @@
 package handlers
 
 import (
+	"fmt"
 	"log"
 	"net/http"
 	"time"
 
+	"github.com/c0dysharma/echo_clarity/helpers"
+	"github.com/c0dysharma/echo_clarity/models"
 	"github.com/c0dysharma/echo_clarity/structs"
 	"github.com/labstack/echo/v4"
 	"google.golang.org/api/calendar/v3"
@@ -13,16 +16,32 @@ import (
 var calendarService = structs.CalendarEvent{}
 
 func GetCalendarEvents(c echo.Context) error {
-	accessToken := ""
+	// Get email from context
+	rUser := c.Get("user").(models.User)
+	fmt.Println("user: ", rUser)
 
-	// Fetch Google Calendar events for today
-	events, err := calendarService.GetTodayEvents(accessToken)
+	if rUser.Email == "" {
+		return c.JSON(http.StatusUnauthorized, map[string]string{"error": "User not authenticated"})
+	}
+
+	// Get stored encrypted refresh token
+	encryptedToken := rUser.RefreshToken
+
+	// Decrypt refresh token
+	decryptedToken, err := helpers.DecryptPassword(encryptedToken)
+	if err != nil {
+		return c.JSON(http.StatusInternalServerError, map[string]string{"error": "Failed to decrypt refresh token"})
+	}
+
+	fmt.Println("Decoded refresh token: ", decryptedToken)
+
+	// Fetch Google Calendar events using decrypted token
+	events, err := calendarService.GetTodayEvents(decryptedToken)
 	if err != nil {
 		log.Printf("Error fetching calendar events: %v", err)
 		return c.JSON(http.StatusInternalServerError, map[string]string{"error": "Failed to fetch calendar events"})
 	}
 
-	// Return the events as a JSON response
 	return c.JSON(http.StatusOK, events)
 }
 

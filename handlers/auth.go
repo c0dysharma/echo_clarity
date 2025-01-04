@@ -3,28 +3,64 @@ package handlers
 
 import (
 	"fmt"
+	"log"
 	"net/http"
-	"os"
 
+	"github.com/c0dysharma/echo_clarity/helpers"
+	"github.com/c0dysharma/echo_clarity/models"
 	"github.com/labstack/echo/v4"
 	"github.com/markbates/goth/gothic"
 )
 
 // GoogleLoginHandler redirects to Google's OAuth login
 func GoogleLoginHandler(c echo.Context) error {
-	fmt.Println(os.Getenv("GOOGLE_CLIENT_KEY"),
-	os.Getenv("GOOGLE_CLIENT_SECRET"),
-	os.Getenv("GOOGLE_REDIRECT_URL"))
-
 	gothic.BeginAuthHandler(c.Response().Writer, c.Request())
 	return nil
 }
 
-// GoogleCallbackHandler handles the callback from Google's OAuth
 func GoogleCallbackHandler(c echo.Context) error {
 	user, err := gothic.CompleteUserAuth(c.Response().Writer, c.Request())
 	if err != nil {
 		return c.JSON(http.StatusUnauthorized, map[string]string{"error": err.Error()})
 	}
-	return c.JSON(http.StatusOK, user)
+
+	// encrypt user refresh token
+
+	//TODO: use RefreshToken but its coming null
+	fmt.Println("DTBS", user)
+	hashedRefreshToken, err := helpers.EncryptPassword(user.UserID)
+	if err != nil {
+		log.Fatalln("error in password hash")
+	}
+
+	// store in db if not exists
+	var dbuser models.User
+	helpers.DB.Where("email = ?", user.Email).First(&dbuser)
+
+	if dbuser.Email == "" {
+		// create new user
+		dbuser = models.User{
+			Email:        user.Email,
+			Name:         user.Name,
+			RefreshToken: hashedRefreshToken,
+		}
+
+		helpers.DB.Create(&dbuser)
+	} else {
+		// else update refresh token
+		dbuser.RefreshToken = hashedRefreshToken
+		helpers.DB.Save(&dbuser)
+	}
+
+	// Generate JWT token
+	token, err := helpers.GenerateJWT(dbuser.ID, dbuser.Email)
+	if err != nil {
+		return c.JSON(http.StatusInternalServerError, map[string]string{"error": "Failed to generate token"})
+	}
+
+	// Return both user and token
+	return c.JSON(http.StatusOK, map[string]interface{}{
+		"user":  dbuser,
+		"token": token,
+	})
 }

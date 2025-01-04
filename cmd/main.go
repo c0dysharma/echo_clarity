@@ -7,6 +7,9 @@ import (
 	"os"
 
 	"github.com/c0dysharma/echo_clarity/handlers"
+	"github.com/c0dysharma/echo_clarity/helpers"
+	"github.com/c0dysharma/echo_clarity/middlewares"
+	"github.com/c0dysharma/echo_clarity/models"
 	"github.com/gorilla/sessions"
 	"github.com/joho/godotenv"
 	"github.com/labstack/echo/v4"
@@ -43,7 +46,18 @@ func main() {
 	store.MaxAge(86400 * 30) // 30 days
 	gothic.Store = store
 
+	// initialize OAuth
 	initOAuth()
+
+	// initialize database
+	helpers.ConnectDB()
+
+	// auto migrate models
+	db := helpers.DB
+	err := db.AutoMigrate(&models.User{})
+	if err != nil {
+		log.Fatal("Failed to migrate models")
+	}
 
 	e := echo.New()
 
@@ -55,8 +69,12 @@ func main() {
 	e.GET("/ping", handlers.PongHandler)
 	e.GET("/auth/google", handlers.GoogleLoginHandler)
 	e.GET("/auth/google/callback", handlers.GoogleCallbackHandler)
-	e.GET("/calendar", handlers.GetCalendarEvents)
-	e.POST("/calendar", handlers.CreateCalendarEvent)
+
+	// Authenticated routes
+	authGroup := e.Group("")
+	authGroup.Use(middlewares.AuthMiddleware)
+	authGroup.GET("/calendar", handlers.GetCalendarEvents)
+	authGroup.POST("/calendar", handlers.CreateCalendarEvent)
 
 	// Start server
 	port := os.Getenv("PORT")
