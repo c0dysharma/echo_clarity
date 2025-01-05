@@ -7,9 +7,10 @@ import (
 	"encoding/base64"
 	"fmt"
 	"io"
-	"log"
 	"os"
 	"time"
+
+	"github.com/charmbracelet/log"
 
 	"github.com/golang-jwt/jwt"
 )
@@ -81,7 +82,7 @@ func DecryptPassword(encrypted string) (string, error) {
 	nonce, eP := eP[:nonceSize], eP[nonceSize:]
 	plaintext, err := gcm.Open(nil, nonce, eP, nil)
 	if err != nil {
-		fmt.Println(err)
+		log.Error(err)
 	}
 
 	return string(plaintext), nil
@@ -117,12 +118,10 @@ func VerifyToken(tokenString string) (jwt.MapClaims, error) {
 		return []byte(os.Getenv("JWT_SECRET")), nil
 	})
 	if err != nil {
-		log.Fatal(err)
+		return nil, err
 	}
 
 	if claims, ok := token.Claims.(jwt.MapClaims); ok {
-		// fmt.Println(claims["foo"], claims["nbf"])
-
 		// check expiration
 		if float64(time.Now().Unix()) > claims["exp"].(float64) {
 			return nil, fmt.Errorf("token Expired")

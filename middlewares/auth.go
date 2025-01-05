@@ -40,3 +40,31 @@ func AuthMiddleware(next echo.HandlerFunc) echo.HandlerFunc {
 		return next(c)
 	}
 }
+
+func DecrypToken(next echo.HandlerFunc) echo.HandlerFunc {
+	return func(c echo.Context) error {
+		rUser := c.Get("user").(models.User)
+
+		if rUser.Email == "" {
+			return echo.NewHTTPError(http.StatusUnauthorized, "user not authenticated")
+		}
+
+		// decrypt the token and set user again
+
+		dAT, err := helpers.DecryptPassword(rUser.AccessToken)
+		if err != nil {
+			return c.JSON(http.StatusInternalServerError, map[string]string{"error": "Failed to decrypt access token"})
+		}
+
+		dRT, err := helpers.DecryptPassword(rUser.RefreshToken)
+		if err != nil {
+			return c.JSON(http.StatusInternalServerError, map[string]string{"error": "Failed to decrypt refresh token"})
+		}
+
+		rUser.AccessToken = dAT
+		rUser.RefreshToken = dRT
+
+		c.Set("user", rUser)
+		return next(c)
+	}
+}

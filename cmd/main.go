@@ -2,7 +2,6 @@
 package main
 
 import (
-	"log"
 	"net/http"
 	"os"
 
@@ -10,6 +9,7 @@ import (
 	"github.com/c0dysharma/echo_clarity/helpers"
 	"github.com/c0dysharma/echo_clarity/middlewares"
 	"github.com/c0dysharma/echo_clarity/models"
+	"github.com/charmbracelet/log"
 	"github.com/gorilla/sessions"
 	"github.com/joho/godotenv"
 	"github.com/labstack/echo/v4"
@@ -59,10 +59,32 @@ func main() {
 		log.Fatal("Failed to migrate models")
 	}
 
-	e := echo.New()
+	// Initialize logger
+	logger := log.NewWithOptions(os.Stdout, log.Options{
+		ReportCaller:    false,
+		ReportTimestamp: true,
+		TimeFormat:      "2006-01-02 15:04:05",
+	})
 
-	// Middleware
-	e.Use(middleware.Logger())
+	e := echo.New()
+	e.HideBanner = false
+	e.HidePort = false
+
+	// Custom logging middleware
+	e.Use(middleware.RequestLoggerWithConfig(middleware.RequestLoggerConfig{
+		LogURI:     true,
+		LogStatus:  true,
+		LogLatency: true,
+		LogValuesFunc: func(c echo.Context, v middleware.RequestLoggerValues) error {
+			logger.Info("request",
+				"uri", v.URI,
+				"status", v.Status,
+				"latency", v.Latency,
+			)
+			return nil
+		},
+	}))
+
 	e.Use(middleware.Recover())
 
 	// Routes
@@ -73,6 +95,7 @@ func main() {
 	// Authenticated routes
 	authGroup := e.Group("")
 	authGroup.Use(middlewares.AuthMiddleware)
+	authGroup.Use(middlewares.DecrypToken)
 	authGroup.GET("/calendar", handlers.GetCalendarEvents)
 	authGroup.POST("/calendar", handlers.CreateCalendarEvent)
 

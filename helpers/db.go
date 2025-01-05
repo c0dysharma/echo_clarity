@@ -1,8 +1,9 @@
 package helpers
 
 import (
-	"log"
 	"os"
+
+	"github.com/charmbracelet/log"
 
 	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
@@ -21,7 +22,7 @@ func ConnectDB() {
 		log.Fatal("Failed to connect to database:", err)
 	}
 	DB = db
-	log.Println("Connected to database")
+	log.Info("Connected to database")
 
 	// Migrate the schema
 	// db.AutoMigrate(&Product{})

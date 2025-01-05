@@ -7,4 +7,5 @@ type User struct {
 	Name         string
 	Email        string `gorm:"uniqueIndex"`
 	RefreshToken string
+	AccessToken  string
 }
