@@ -41,9 +41,10 @@ func GoogleCallbackHandler(c echo.Context) error {
 	if dbuser.Email == "" {
 		// create new user
 		dbuser = models.User{
-			Email:       user.Email,
-			Name:        user.Name,
-			AccessToken: hashedAccessToken,
+			Email:                user.Email,
+			Name:                 user.Name,
+			AccessToken:          hashedAccessToken,
+			AccessTokenExpiresAt: user.ExpiresAt,
 		}
 		if user.RefreshToken != "" {
 			dbuser.RefreshToken = hashedRefreshToken
@@ -53,6 +54,8 @@ func GoogleCallbackHandler(c echo.Context) error {
 	} else {
 		// else update refresh token
 		dbuser.AccessToken = hashedAccessToken
+		dbuser.AccessTokenExpiresAt = user.ExpiresAt
+
 		if user.RefreshToken != "" {
 			dbuser.RefreshToken = hashedRefreshToken
 		}
@@ -69,5 +72,6 @@ func GoogleCallbackHandler(c echo.Context) error {
 	return c.JSON(http.StatusOK, map[string]interface{}{
 		"user":  dbuser,
 		"token": token,
+		"gUser": user,
 	})
 }

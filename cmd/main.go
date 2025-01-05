@@ -96,6 +96,7 @@ func main() {
 	authGroup := e.Group("")
 	authGroup.Use(middlewares.AuthMiddleware)
 	authGroup.Use(middlewares.DecrypToken)
+	authGroup.Use(middlewares.RefreshOAuthAccessToken)
 	authGroup.GET("/calendar", handlers.GetCalendarEvents)
 	authGroup.POST("/calendar", handlers.CreateCalendarEvent)
 

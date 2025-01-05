@@ -2,7 +2,6 @@ package structs
 
 import (
 	"context"
-	"log"
 	"time"
 
 	"golang.org/x/oauth2"
@@ -28,12 +27,17 @@ func (c *CalendarEvent) getCalendarService(accessToken string) (*calendar.Servic
 	return srv, err
 }
 
-func (c *CalendarEvent) GetTodayEvents(accessToken string) ([]*calendar.Event, error) {
+/*
+*
+[]*calendar.Event - Calendar events
+error - Error if any
+bool - Boolean indicating whether its Operational Error or not
+*/
+func (c *CalendarEvent) GetTodayEvents(accessToken string) ([]*calendar.Event, error, bool) {
 	// Create a new Calendar Service using the access token
 	srv, err := c.getCalendarService(accessToken)
 	if err != nil {
-		log.Printf("Unable to create calendar service: %v", err)
-		return nil, err
+		return nil, err, true
 	}
 
 	// Get the current date in RFC3339 format
@@ -49,26 +53,23 @@ func (c *CalendarEvent) GetTodayEvents(accessToken string) ([]*calendar.Event, e
 		OrderBy("startTime").
 		Do()
 	if err != nil {
-		log.Printf("Unable to retrieve calendar events: %v", err)
-		return nil, err
+		return nil, err, false
 	}
 
-	return events.Items, nil
+	return events.Items, nil, false
 }
 
-func (c *CalendarEvent) CreateEvent(event *calendar.Event, accessToken string) (*calendar.Event, error) {
+func (c *CalendarEvent) CreateEvent(event *calendar.Event, accessToken string) (*calendar.Event, error, bool) {
 	srv, err := c.getCalendarService(accessToken)
 	if err != nil {
-		log.Printf("Unable to create calendar service: %v", err)
-		return nil, err
+		return nil, err, true
 	}
 
 	// Insert the event into the user's primary calendar
 	createdEvent, err := srv.Events.Insert("primary", event).Do()
 	if err != nil {
-		log.Printf("Unable to create event: %v", err)
-		return nil, err
+		return nil, err, false
 	}
 
-	return createdEvent, nil
+	return createdEvent, nil, false
 }
