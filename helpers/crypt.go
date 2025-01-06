@@ -88,7 +88,7 @@ func DecryptPassword(encrypted string) (string, error) {
 	return string(plaintext), nil
 }
 
-func GenerateJWT(ID uint, email string) (string, error) {
+func GenerateJWT(ID uint, email string, existingTokenVersion float32) (string, error) {
 	var mySigningKey = []byte(os.Getenv("JWT_SECRET"))
 	token := jwt.New(jwt.SigningMethodHS256)
 	claims := token.Claims.(jwt.MapClaims)
@@ -96,6 +96,7 @@ func GenerateJWT(ID uint, email string) (string, error) {
 	claims["authorized"] = true
 	claims["email"] = email
 	claims["ID"] = ID
+	claims["tokenVersion"] = existingTokenVersion + 1
 	// claims["exp"] = time.Now().Add(time.Minute * 30).Unix()
 	claims["exp"] = time.Now().Add(time.Hour * 24 * 30).Unix()
 

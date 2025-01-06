@@ -13,4 +13,5 @@ type User struct {
 	RefreshToken         string
 	AccessToken          string
 	AccessTokenExpiresAt time.Time
+	JWTTokenVersion float32
 }

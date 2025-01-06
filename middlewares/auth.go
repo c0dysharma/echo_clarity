@@ -29,6 +29,7 @@ func AuthMiddleware(next echo.HandlerFunc) echo.HandlerFunc {
 
 		// Access ID from MapClaims
 		userID := claims["ID"]
+		tokenVersion := float32(claims["tokenVersion"].(float64))
 		var user models.User
 
 		helpers.DB.Find(&user, userID)
@@ -36,12 +37,16 @@ func AuthMiddleware(next echo.HandlerFunc) echo.HandlerFunc {
 			return echo.NewHTTPError(http.StatusUnauthorized, "user not found")
 		}
 
+		if user.JWTTokenVersion != tokenVersion{
+			return echo.NewHTTPError(http.StatusUnauthorized, "token version expired")
+		}
+
 		c.Set("user", user)
 		return next(c)
 	}
 }
 
-func DecrypToken(next echo.HandlerFunc) echo.HandlerFunc {
+func DecryptToken(next echo.HandlerFunc) echo.HandlerFunc {
 	return func(c echo.Context) error {
 		rUser := c.Get("user").(models.User)
 

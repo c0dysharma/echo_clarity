@@ -25,9 +25,6 @@ func GoogleCallbackHandler(c echo.Context) error {
 	}
 
 	// encrypt user refresh token
-
-	//TODO: Expire existing token for the user when re-sign up
-	log.Info("DTBS", user)
 	hashedAccessToken, err1 := helpers.EncryptPassword(user.AccessToken)
 	hashedRefreshToken, err2 := helpers.EncryptPassword(user.RefreshToken)
 	if err1 != nil || err2 != nil {
@@ -63,15 +60,19 @@ func GoogleCallbackHandler(c echo.Context) error {
 	}
 
 	// Generate JWT token
-	token, err := helpers.GenerateJWT(dbuser.ID, dbuser.Email)
-	if err != nil {
-		return c.JSON(http.StatusInternalServerError, map[string]string{"error": "Failed to generate token"})
-	}
+	token, err := helpers.GenerateJWT(dbuser.ID, dbuser.Email, dbuser.JWTTokenVersion)
+	if err!= nil {
+    return c.JSON(http.StatusInternalServerError, map[string]string{"error": "Failed to generate token"})
+  }
 
-	// Return both user and token
-	return c.JSON(http.StatusOK, map[string]interface{}{
-		"user":  dbuser,
-		"token": token,
-		"gUser": user,
-	})
+	// update the token version for user
+	dbuser.JWTTokenVersion++
+  helpers.DB.Save(&dbuser)
+
+  // Return both user and token
+  return c.JSON(http.StatusOK, map[string]interface{}{
+    "user":  dbuser,
+    "token": token,
+    "gUser": user,
+  })
 }
