@@ -54,43 +54,56 @@ func CreateCalendarEvent(c echo.Context) error {
 	log.Info("token info", "refresh_token", rUser.RefreshToken)
 
 	// Parse the request body
-	var req structs.CalendarEvent
+	var req []structs.CalendarEvent
 	if err := c.Bind(&req); err != nil {
 		log.Error("Failed to parse request body", "error", err)
 		return c.JSON(http.StatusBadRequest, map[string]string{"error": "Invalid request"})
 	}
 
+	if(len(req) >= 20){
+		return c.JSON(http.StatusBadRequest, map[string]string{"error": "Cannot create more than 20 events at a time"})
+	}
+
+  var data []structs.CalendarEvent
+
+	for _, event := range req {
 	// Validate input
-	if req.EventName == "" || req.StartTime.IsZero() || req.EndTime.IsZero() {
+	if event.EventName == "" || event.StartTime.IsZero() || event.EndTime.IsZero() {
 		return c.JSON(http.StatusBadRequest, map[string]string{"error": "Missing required fields"})
 	}
 
 	// Create a new event
-	event := &calendar.Event{
-		Summary: req.EventName,
+	cE := &calendar.Event{
+		Summary: event.EventName,
 		Start: &calendar.EventDateTime{
-			DateTime: req.StartTime.Format(time.RFC3339),
-			TimeZone: req.StartTime.Location().String(),
+			DateTime: event.StartTime.UTC().Format(time.RFC3339),
+			TimeZone: "UTC",
 		},
 		End: &calendar.EventDateTime{
-			DateTime: req.EndTime.Format(time.RFC3339),
-			TimeZone: req.EndTime.Location().String(),
+			DateTime: event.EndTime.UTC().Format(time.RFC3339),
+			TimeZone: "UTC",
 		},
 	}
+		// Call the helper function to create the event
+		createdEvent, err, isOperational := calendarService.CreateEvent(cE, rUser.AccessToken)
 
-	// Call the helper function to create the event
-	createdEvent, err, isOperational := calendarService.CreateEvent(event, rUser.AccessToken)
-	if err != nil {
-		log.Error("Failed to create calendar event", "error", err)
-
-		eC := http.StatusUnauthorized
-		if isOperational {
-			eC = http.StatusInternalServerError
+		if err != nil {
+			log.Error("Failed to create calendar event", "error", err)
+	
+			eC := http.StatusUnauthorized
+			if isOperational {
+				eC = http.StatusInternalServerError
+			}
+	
+			return c.JSON(eC, map[string]string{"error": "Failed to create event"})
 		}
-
-		return c.JSON(eC, map[string]string{"error": "Failed to create event"})
+		data = append(data, structs.CalendarEvent{
+			EventName: createdEvent.Summary,
+			StartTime: event.StartTime,
+			EndTime:   event.EndTime,
+		})
 	}
 
 	// Return the created event as a response
-	return c.JSON(http.StatusOK, createdEvent)
+	return c.JSON(http.StatusOK, data)
 }

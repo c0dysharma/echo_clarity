@@ -1,4 +1,3 @@
-// File: cmd/main.go
 package main
 
 import (
@@ -99,6 +98,7 @@ func main() {
 	authGroup.Use(middlewares.RefreshOAuthAccessToken)
 	authGroup.GET("/calendar", handlers.GetCalendarEvents)
 	authGroup.POST("/calendar", handlers.CreateCalendarEvent)
+	authGroup.POST("/ocr", handlers.OCREventData)
 
 	// Start server
 	port := os.Getenv("PORT")

@@ -4,6 +4,7 @@ import (
 	"net/http"
 	"strings"
 
+	"github.com/charmbracelet/log"
 	"github.com/c0dysharma/echo_clarity/helpers"
 	"github.com/c0dysharma/echo_clarity/models"
 	"github.com/labstack/echo/v4"
@@ -24,6 +25,7 @@ func AuthMiddleware(next echo.HandlerFunc) echo.HandlerFunc {
 
 		claims, err := helpers.VerifyToken(tokenParts[1])
 		if err != nil {
+			log.Error(err)
 			return echo.NewHTTPError(http.StatusUnauthorized, "invalid token")
 		}
 
