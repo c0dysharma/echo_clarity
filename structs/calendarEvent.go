@@ -10,9 +10,9 @@ import (
 )
 
 type CalendarEvent struct {
-	EventName string `json:"event_name"`
-	StartTime string `json:"start_time"` // ISO 8601 format: "2025-01-03T10:00:00-05:00"
-	EndTime   string `json:"end_time"`   // ISO 8601 format: "2025-01-03T11:00:00-05:00"
+	EventName string `json:"eventName"`
+	StartTime time.Time `json:"startTime"` // ISO 8601 format: "2025-01-03T10:00:00-05:00"
+	EndTime   time.Time `json:"endTime"`   // ISO 8601 format: "2025-01-03T11:00:00-05:00"
 }
 
 func (c *CalendarEvent) getCalendarService(accessToken string) (*calendar.Service, error) {

@@ -61,32 +61,20 @@ func CreateCalendarEvent(c echo.Context) error {
 	}
 
 	// Validate input
-	if req.EventName == "" || req.StartTime == "" || req.EndTime == "" {
+	if req.EventName == "" || req.StartTime.IsZero() || req.EndTime.IsZero() {
 		return c.JSON(http.StatusBadRequest, map[string]string{"error": "Missing required fields"})
-	}
-
-	// Parse start and end times
-	startTime, err := time.Parse(time.RFC3339, req.StartTime)
-	if err != nil {
-		log.Error("Invalid start time format", "error", err)
-		return c.JSON(http.StatusBadRequest, map[string]string{"error": "Invalid start time format"})
-	}
-	endTime, err := time.Parse(time.RFC3339, req.EndTime)
-	if err != nil {
-		log.Error("Invalid end time format", "error", err)
-		return c.JSON(http.StatusBadRequest, map[string]string{"error": "Invalid end time format"})
 	}
 
 	// Create a new event
 	event := &calendar.Event{
 		Summary: req.EventName,
 		Start: &calendar.EventDateTime{
-			DateTime: startTime.Format(time.RFC3339),
-			TimeZone: startTime.Location().String(),
+			DateTime: req.StartTime.Format(time.RFC3339),
+			TimeZone: req.StartTime.Location().String(),
 		},
 		End: &calendar.EventDateTime{
-			DateTime: endTime.Format(time.RFC3339),
-			TimeZone: endTime.Location().String(),
+			DateTime: req.EndTime.Format(time.RFC3339),
+			TimeZone: req.EndTime.Location().String(),
 		},
 	}
 
