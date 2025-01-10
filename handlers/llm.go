@@ -18,6 +18,11 @@ type OCRResponse struct{
 }
 
 func OCREventData(c echo.Context) error {
+	// if /uploads folder doesn't exist create it
+	if _, err := os.Stat("uploads"); os.IsNotExist(err) {
+		os.Mkdir("uploads", 0755)
+	}
+
 	dstFilePath := fmt.Sprintf("uploads/%s", uuid.New().String())
 
 	// Source
